@@ -10,7 +10,7 @@ public:
   std::deque<char> children;
   std::pair<int, int> position;
   char value;
-  bool board_child_checked = false;
+  bool board_child_checked = false, checked = false;
 
   Tree_item(std::pair<int, int> position, char value, int rows, int cols,
             int depth, int operations,
