@@ -129,15 +129,6 @@ int main(int argc, char **argv)
 {
   /// Read in data
   std::cin >> rows >> cols >> max_steps;
-  if (rows > max_steps)
-  {
-    rows = max_steps + 1;
-  }
-  if (cols > max_steps)
-  {
-    cols = max_steps + 1;
-  }
-
   board = new char*[rows];
   std::pair<int, int> target;
 

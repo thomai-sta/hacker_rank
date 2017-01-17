@@ -11,14 +11,13 @@ public:
   std::deque<char> children;
   std::pair<int, int> position;
   char value;
-  bool board_child_checked = false, checked = false;
+  bool checked = false;
 
   Tree_item(std::pair<int, int> position, char value, int rows, int cols,
             int depth, int operations,
             std::vector<std::pair<int, int> > parents_path);
   std::pair<int, int> get_next_cell();
 };
-
 
 Tree_item::Tree_item(std::pair<int, int> position,
  char value, int rows, int cols, int depth,
@@ -34,6 +33,9 @@ Tree_item::Tree_item(std::pair<int, int> position,
 
   std::pair<int, int> next_cell = get_next_cell();
 
+
+  /// Calculate possible children for the node, depending on current position
+  //  and current move
   if (value == 'T')
   {
     // Root node
@@ -60,7 +62,6 @@ Tree_item::Tree_item(std::pair<int, int> position,
   }
 }
 
-
 std::pair<int, int> Tree_item::get_next_cell()
 {
   std::pair<int, int> next_cell;
@@ -86,10 +87,9 @@ std::pair<int, int> Tree_item::get_next_cell()
 }
 
 
-
 char **board;
 std::deque<Tree_item> tree;
-int rows, cols, max_operations, operations = -1;
+int rows, cols, max_operations, operations = -1, max_steps;
 bool found = false;
 
 void make_next_node()
@@ -98,28 +98,19 @@ void make_next_node()
   std::pair<int, int> next_cell = tree.front().get_next_cell();
 
   /// Get new node's value
-  std::vector<bool>::iterator it;
-
   char new_val = tree.front().children.front();
   tree.front().children.pop_front();
 
+  /// If the value of the new node is not the default on the board,
+  //  then increas No. of operations
   if (board[next_cell.first][next_cell.second] != new_val)
   {
     new_op++;
     if (new_op > max_operations ||
        (new_op >= operations && found))
     {
-      if (tree.front().children.empty())
-      {
-        /// All node's children visited, remove from tree
-        tree.pop_front();
-      }
       return;
     }
-  }
-  else
-  {
-    tree.front().board_child_checked = true;
   }
 
   /// Check if new_node makes loop
@@ -127,26 +118,14 @@ void make_next_node()
   {
     if (tree.front().private_path[i] == next_cell)
     {
-      /// LOOP
-      if (tree.front().children.empty())
-      {
-        /// All node's children visited, remove from tree
-        tree.pop_front();
-      }
       return;
     }
   }
 
   Tree_item new_node(next_cell, new_val, rows, cols, tree.front().depth + 1,
                      new_op, tree.front().private_path);
+  tree.push_front(new_node);
 
-  tree.push_back(new_node);
-
-  if (tree.front().children.empty())
-  {
-    /// All node's children visited, remove from tree
-    tree.pop_front();
-  }
   return;
 }
 
@@ -154,18 +133,7 @@ void make_next_node()
 int main(int argc, char **argv)
 {
   /// Read in data
-  int max_steps;
-
   std::cin >> rows >> cols >> max_steps;
-  if (rows > max_steps)
-  {
-    rows = max_steps + 1;
-  }
-  if (cols > max_steps)
-  {
-    cols = max_steps + 1;
-  }
-
   board = new char*[rows];
   std::pair<int, int> target;
 
@@ -202,17 +170,17 @@ int main(int argc, char **argv)
     return 0;
   }
 
-  /// Implement BFS for tree to get all possible paths =========================
+  /// Implement DFS for tree to get all possible paths =========================
   /// Make ROOT node
   std::pair<int, int> curr_cell = {-1, -1};
   std::vector<std::pair<int, int> > parent_path;
   parent_path.push_back(curr_cell);
   Tree_item root_node(curr_cell, 'T', rows, cols, -1, 0, parent_path);
-  tree.push_back(root_node);
+  tree.push_front(root_node);
 
-  for (int d = -1; d < max_steps; d++)
+  while(!tree.empty())
   {
-    while(tree.front().depth == d)
+    if (!tree.front().checked)
     {
       tree.front().checked = true;
       std::pair<int, int> next_cell = tree.front().get_next_cell();
@@ -235,11 +203,17 @@ int main(int argc, char **argv)
         }
         tree.pop_front();
       }
+    }
+    /// Check for empty children
+    while ((tree.front().children.empty() ||
+            tree.front().depth == max_steps - 1) && !tree.empty())
+    {
+      tree.pop_front();
+    }
 
-      while (tree.front().checked)
-      {
-        make_next_node();
-      }
+    if (!tree.empty())
+    {
+      make_next_node();
     }
   }
 
